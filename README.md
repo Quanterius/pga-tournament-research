@@ -1,1 +1,1 @@
-# pga-tournament-research
+# TRGP-Pick-Helper
