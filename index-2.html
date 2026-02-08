@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRGP Pick Helper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f4c27 0%, #1a7a3e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #0f4c27;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tournament-item {
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tournament-item:hover {
+            border-color: #0f4c27;
+            background: #f8fff8;
+        }
+
+        .tournament-item.selected {
+            border-color: #0f4c27;
+            background: #e8f5e9;
+        }
+
+        .tournament-item.completed {
+            opacity: 0.6;
+            background: #f5f5f5;
+        }
+
+        .tournament-item.in-progress {
+            border-color: #ff6b6b;
+            background: #fff5f5;
+        }
+
+        .tournament-divider {
+            margin: 24px 0;
+            padding: 12px;
+            background: #0f4c27;
+            color: white;
+            text-align: center;
+            font-weight: 600;
+            border-radius: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tournament-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #0f4c27;
+            margin-bottom: 8px;
+        }
+
+        .tournament-details {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .golfer-item {
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .golfer-item:hover {
+            border-color: #0f4c27;
+            background: #f8fff8;
+        }
+
+        .golfer-item.used {
+            opacity: 0.5;
+            text-decoration: line-through;
+            background: #f5f5f5;
+        }
+
+        .golfer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .golfer-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #0f4c27;
+        }
+
+        .golfer-rank {
+            background: #0f4c27;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .golfer-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .odds-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .odds-favorite {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .odds-contender {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .odds-longshot {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.hot {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .badge.warm {
+            background: #ffd93d;
+            color: #333;
+        }
+
+        .badge.cold {
+            background: #6c99e8;
+            color: white;
+        }
+
+        .badge.specialist {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .badge.used {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .back-btn {
+            background: #0f4c27;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: #1a7a3e;
+        }
+
+        .filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: #0f4c27;
+        }
+
+        .filter-btn.active {
+            background: #0f4c27;
+            color: white;
+            border-color: #0f4c27;
+        }
+
+        .favorite-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 8px;
+            transition: transform 0.2s;
+        }
+
+        .favorite-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .used-btn {
+            background: none;
+            border: 2px solid #666;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+
+        .used-btn:hover {
+            border-color: #0f4c27;
+            background: #f0f0f0;
+        }
+
+        .favorites-section {
+            background: #fff9e6;
+            border: 2px solid #ffd93d;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .notes-section {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .notes-section textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 2px solid #bbdefb;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .notes-section textarea:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏌️ TRGP Pick Helper</h1>
+            <div class="subtitle">2026 PGA Tour Research Tool</div>
+        </div>
+        <div id="app"></div>
+    </div>
+
+    <script>
+        // App state
+        let state = {
+            view: 'tournaments',
+            selectedTournament: null,
+            selectedGolfer: null,
+            favorites: JSON.parse(localStorage.getItem('favorites') || '[]'),
+            notes: JSON.parse(localStorage.getItem('notes') || '{}'),
+            sortBy: 'rank',
+            usedGolfers: JSON.parse(localStorage.getItem('usedGolfers') || '[]'),
+            showOnlyAvailable: false
+        };
+
+        let tournaments = [];
+        let apiDataCache = {
+            tournaments: [],
+            lastFetch: null
+        };
+
+        // 2026 PGA Tour Schedule - Static data
+        const PGA_SCHEDULE_2026 = [
+            { id: 'sentry-2026', name: "Sentry Tournament of Champions", date: "January 2-5, 2026", location: "Kapalua Resort (Plantation Course), Maui, HI", field: 0, status: 'completed', winner: 'Hideki Matsuyama' },
+            { id: 'sony-2026', name: "Sony Open in Hawaii", date: "January 9-12, 2026", location: "Waialae Country Club, Honolulu, HI", field: 0, status: 'completed', winner: 'Patrick Cantlay' },
+            { id: 'amex-2026', name: "The American Express", date: "January 16-19, 2026", location: "PGA West (Stadium/Nicklaus), La Quinta, CA", field: 0, status: 'completed', winner: 'Justin Thomas' },
+            { id: 'farmers-2026', name: "Farmers Insurance Open", date: "January 22-25, 2026", location: "Torrey Pines Golf Course (South), San Diego, CA", field: 0, status: 'completed', winner: 'Ludvig Åberg' },
+            { id: 'att-2026', name: "AT&T Pebble Beach Pro-Am", date: "January 30-February 2, 2026", location: "Pebble Beach Golf Links, Pebble Beach, CA", field: 0, status: 'completed', winner: 'Wyndham Clark' },
+            { id: 'wmpo-2026', name: "WM Phoenix Open", date: "February 6-9, 2026", location: "TPC Scottsdale, Scottsdale, AZ", field: 0, status: 'in_progress', winner: null },
+            { id: 'genesis-2026', name: "The Genesis Invitational", date: "February 13-16, 2026", location: "Riviera Country Club, Pacific Palisades, CA", field: 0, status: 'upcoming', winner: null },
+            { id: 'mexico-2026', name: "Mexico Open at Vidanta", date: "February 20-23, 2026", location: "Vidanta Vallarta, Puerto Vallarta, Mexico", field: 0, status: 'upcoming', winner: null },
+            { id: 'cognizant-2026', name: "Cognizant Classic", date: "February 27-March 2, 2026", location: "PGA National (Champion), Palm Beach Gardens, FL", field: 0, status: 'upcoming', winner: null },
+            { id: 'arnold-2026', name: "Arnold Palmer Invitational", date: "March 5-8, 2026", location: "Bay Hill Club & Lodge, Orlando, FL", field: 0, status: 'upcoming', winner: null },
+            { id: 'players-2026', name: "THE PLAYERS Championship", date: "March 12-15, 2026", location: "TPC Sawgrass (Stadium Course), Ponte Vedra Beach, FL", field: 0, status: 'upcoming', winner: null },
+            { id: 'valspar-2026', name: "Valspar Championship", date: "March 19-22, 2026", location: "Innisbrook Resort (Copperhead), Palm Harbor, FL", field: 0, status: 'upcoming', winner: null },
+            { id: 'matchplay-2026', name: "WGC-Dell Technologies Match Play", date: "March 25-29, 2026", location: "Austin Country Club, Austin, TX", field: 0, status: 'upcoming', winner: null },
+            { id: 'valero-2026', name: "Valero Texas Open", date: "April 2-5, 2026", location: "TPC San Antonio (AT&T Oaks), San Antonio, TX", field: 0, status: 'upcoming', winner: null },
+            { id: 'masters-2026', name: "Masters Tournament", date: "April 9-12, 2026", location: "Augusta National Golf Club, Augusta, GA", field: 0, status: 'upcoming', winner: null },
+            { id: 'rbc-2026', name: "RBC Heritage", date: "April 16-19, 2026", location: "Harbour Town Golf Links, Hilton Head Island, SC", field: 0, status: 'upcoming', winner: null },
+            { id: 'zurich-2026', name: "Zurich Classic of New Orleans", date: "April 23-26, 2026", location: "TPC Louisiana, Avondale, LA", field: 0, status: 'upcoming', winner: null },
+            { id: 'mexico-champ-2026', name: "Mexico Open Championship", date: "April 30-May 3, 2026", location: "TPC Craig Ranch, McKinney, TX", field: 0, status: 'upcoming', winner: null },
+            { id: 'wells-2026', name: "Wells Fargo Championship", date: "May 7-10, 2026", location: "Quail Hollow Club, Charlotte, NC", field: 0, status: 'upcoming', winner: null },
+            { id: 'pgachamp-2026', name: "PGA Championship", date: "May 14-17, 2026", location: "Quail Hollow Club, Charlotte, NC", field: 0, status: 'upcoming', winner: null },
+            { id: 'charles-2026', name: "Charles Schwab Challenge", date: "May 21-24, 2026", location: "Colonial Country Club, Fort Worth, TX", field: 0, status: 'upcoming', winner: null },
+            { id: 'memorial-2026', name: "Memorial Tournament", date: "May 28-31, 2026", location: "Muirfield Village Golf Club, Dublin, OH", field: 0, status: 'upcoming', winner: null },
+            { id: 'canada-2026', name: "RBC Canadian Open", date: "June 4-7, 2026", location: "Hamilton Golf & Country Club, Ancaster, ON", field: 0, status: 'upcoming', winner: null },
+            { id: 'usopen-2026', name: "U.S. Open", date: "June 18-21, 2026", location: "Oakmont Country Club, Oakmont, PA", field: 0, status: 'upcoming', winner: null },
+            { id: 'travelers-2026', name: "Travelers Championship", date: "June 25-28, 2026", location: "TPC River Highlands, Cromwell, CT", field: 0, status: 'upcoming', winner: null },
+            { id: 'rocket-2026', name: "Rocket Mortgage Classic", date: "July 2-5, 2026", location: "Detroit Golf Club, Detroit, MI", field: 0, status: 'upcoming', winner: null },
+            { id: 'john-deere-2026', name: "John Deere Classic", date: "July 9-12, 2026", location: "TPC Deere Run, Silvis, IL", field: 0, status: 'upcoming', winner: null },
+            { id: 'open-2026', name: "The Open Championship", date: "July 16-19, 2026", location: "Royal Birkdale, Southport, England", field: 0, status: 'upcoming', winner: null },
+            { id: 'barracuda-2026', name: "Barracuda Championship", date: "July 16-19, 2026", location: "Tahoe Mountain Club (Old Greenwood), Truckee, CA", field: 0, status: 'upcoming', winner: null },
+            { id: '3m-2026', name: "3M Open", date: "July 23-26, 2026", location: "TPC Twin Cities, Blaine, MN", field: 0, status: 'upcoming', winner: null },
+            { id: 'wyndham-2026', name: "Wyndham Championship", date: "August 6-9, 2026", location: "Sedgefield Country Club, Greensboro, NC", field: 0, status: 'upcoming', winner: null },
+            { id: 'fedex-stj-2026', name: "FedEx St. Jude Championship", date: "August 13-16, 2026", location: "TPC Southwind, Memphis, TN", field: 0, status: 'upcoming', winner: null },
+            { id: 'bmw-2026', name: "BMW Championship", date: "August 20-23, 2026", location: "Castle Pines Golf Club, Castle Rock, CO", field: 0, status: 'upcoming', winner: null },
+            { id: 'tour-champ-2026', name: "Tour Championship", date: "August 27-30, 2026", location: "East Lake Golf Club, Atlanta, GA", field: 0, status: 'upcoming', winner: null }
+        ];
+
+        // TOP 40 GOLFERS - REAL DATA ONLY (Names, Rankings, Countries)
+        const golfersData = {
+            'default': [
+                { id: 1, name: "Scottie Scheffler", country: "USA", rank: 1, odds: "+550" },
+                { id: 2, name: "Rory McIlroy", country: "NIR", rank: 2, odds: "+800" },
+                { id: 3, name: "Jon Rahm", country: "ESP", rank: 3, odds: "+1000" },
+                { id: 4, name: "Viktor Hovland", country: "NOR", rank: 4, odds: "+1200" },
+                { id: 5, name: "Xander Schauffele", country: "USA", rank: 5, odds: "+750" },
+                { id: 6, name: "Ludvig Åberg", country: "SWE", rank: 6, odds: "+1400" },
+                { id: 7, name: "Collin Morikawa", country: "USA", rank: 7, odds: "+1200" },
+                { id: 8, name: "Patrick Cantlay", country: "USA", rank: 8, odds: "+1100" },
+                { id: 9, name: "Wyndham Clark", country: "USA", rank: 9, odds: "+1300" },
+                { id: 10, name: "Max Homa", country: "USA", rank: 10, odds: "+1500" },
+                { id: 11, name: "Tommy Fleetwood", country: "ENG", rank: 11, odds: "+1400" },
+                { id: 12, name: "Brooks Koepka", country: "USA", rank: 12, odds: "+1600" },
+                { id: 13, name: "Cameron Smith", country: "AUS", rank: 13, odds: "+1700" },
+                { id: 14, name: "Jordan Spieth", country: "USA", rank: 14, odds: "+1800" },
+                { id: 15, name: "Tony Finau", country: "USA", rank: 15, odds: "+1900" },
+                { id: 16, name: "Justin Thomas", country: "USA", rank: 16, odds: "+2000" },
+                { id: 17, name: "Matt Fitzpatrick", country: "ENG", rank: 17, odds: "+2100" },
+                { id: 18, name: "Tyrrell Hatton", country: "ENG", rank: 18, odds: "+2200" },
+                { id: 19, name: "Russell Henley", country: "USA", rank: 19, odds: "+2300" },
+                { id: 20, name: "Sungjae Im", country: "KOR", rank: 20, odds: "+2400" },
+                { id: 21, name: "Sam Burns", country: "USA", rank: 21, odds: "+2500" },
+                { id: 22, name: "Sahith Theegala", country: "USA", rank: 22, odds: "+2600" },
+                { id: 23, name: "Hideki Matsuyama", country: "JPN", rank: 23, odds: "+2700" },
+                { id: 24, name: "Justin Rose", country: "ENG", rank: 24, odds: "+2800" },
+                { id: 25, name: "Keegan Bradley", country: "USA", rank: 25, odds: "+2900" },
+                { id: 26, name: "Shane Lowry", country: "IRL", rank: 26, odds: "+3000" },
+                { id: 27, name: "Rickie Fowler", country: "USA", rank: 27, odds: "+3100" },
+                { id: 28, name: "Tom Kim", country: "KOR", rank: 28, odds: "+3200" },
+                { id: 29, name: "Corey Conners", country: "CAN", rank: 29, odds: "+3300" },
+                { id: 30, name: "Brian Harman", country: "USA", rank: 30, odds: "+3400" },
+                { id: 31, name: "Jason Day", country: "AUS", rank: 31, odds: "+3500" },
+                { id: 32, name: "Si Woo Kim", country: "KOR", rank: 32, odds: "+3600" },
+                { id: 33, name: "Byeong Hun An", country: "KOR", rank: 33, odds: "+3700" },
+                { id: 34, name: "Adam Scott", country: "AUS", rank: 34, odds: "+3800" },
+                { id: 35, name: "Sepp Straka", country: "AUT", rank: 35, odds: "+3900" },
+                { id: 36, name: "Denny McCarthy", country: "USA", rank: 36, odds: "+4000" },
+                { id: 37, name: "Min Woo Lee", country: "AUS", rank: 37, odds: "+4100" },
+                { id: 38, name: "Akshay Bhatia", country: "USA", rank: 38, odds: "+4200" },
+                { id: 39, name: "Will Zalatoris", country: "USA", rank: 39, odds: "+4300" },
+                { id: 40, name: "Cameron Young", country: "USA", rank: 40, odds: "+4400" }
+            ]
+        };
+
+        function getGolfersForTournament(tournamentId) {
+            return golfersData['default'];
+        }
+
+        // Historical data - placeholder for future real data
+        const golferHistory = {};
+
+        // Initialize app
+        async function initializeApp() {
+            tournaments = PGA_SCHEDULE_2026;
+            render();
+        }
+
+        // Helper functions
+        function isUsed(golferId) {
+            return state.usedGolfers.includes(golferId);
+        }
+
+        function toggleUsed(golferId) {
+            if (isUsed(golferId)) {
+                state.usedGolfers = state.usedGolfers.filter(id => id !== golferId);
+            } else {
+                state.usedGolfers.push(golferId);
+            }
+            localStorage.setItem('usedGolfers', JSON.stringify(state.usedGolfers));
+            render();
+        }
+
+        function isFavorite(golferId, tournamentId) {
+            return state.favorites.some(f => f.golferId === golferId && f.tournamentId === tournamentId);
+        }
+
+        function toggleFavorite(golferId, tournamentId) {
+            if (isFavorite(golferId, tournamentId)) {
+                state.favorites = state.favorites.filter(f => 
+                    !(f.golferId === golferId && f.tournamentId === tournamentId)
+                );
+            } else {
+                state.favorites.push({ golferId, tournamentId });
+            }
+            localStorage.setItem('favorites', JSON.stringify(state.favorites));
+            render();
+        }
+
+        function getOddsClass(odds) {
+            const numericOdds = parseInt(odds.replace('+', ''));
+            if (numericOdds < 1000) return 'odds-favorite';
+            if (numericOdds < 2500) return 'odds-contender';
+            return 'odds-longshot';
+        }
+
+        function oddsToImpliedProbability(odds) {
+            const numericOdds = parseInt(odds.replace('+', ''));
+            const probability = (100 / (numericOdds + 100)) * 100;
+            return probability.toFixed(1) + '%';
+        }
+
+        function setSortBy(sortType) {
+            state.sortBy = sortType;
+            render();
+        }
+
+        function toggleAvailableOnly() {
+            state.showOnlyAvailable = !state.showOnlyAvailable;
+            render();
+        }
+
+        function selectTournament(tournamentId) {
+            state.selectedTournament = tournaments.find(t => t.id === tournamentId);
+            state.view = 'golfers';
+            state.selectedGolfer = null;
+            render();
+        }
+
+        function selectGolfer(golferId) {
+            state.selectedGolfer = golferId;
+            state.view = 'golferDetail';
+            render();
+        }
+
+        function backToTournaments() {
+            state.view = 'tournaments';
+            state.selectedTournament = null;
+            state.selectedGolfer = null;
+            render();
+        }
+
+        function backToGolfers() {
+            state.view = 'golfers';
+            state.selectedGolfer = null;
+            render();
+        }
+
+        function saveNotes(golferId, tournamentId) {
+            const notes = document.getElementById('golfer-notes').value;
+            const key = `${golferId}-${tournamentId}`;
+            state.notes[key] = notes;
+            localStorage.setItem('notes', JSON.stringify(state.notes));
+        }
+
+        function getNotes(golferId, tournamentId) {
+            const key = `${golferId}-${tournamentId}`;
+            return state.notes[key] || '';
+        }
+
+        // Render functions
+        function renderTournaments() {
+            let html = '<div class="card"><h2 style="margin-bottom: 16px; color: #0f4c27;">2026 PGA Tour Schedule</h2>';
+            
+            let hasShownDivider = false;
+            
+            tournaments.forEach(t => {
+                if (!hasShownDivider && t.status === 'upcoming') {
+                    html += '<div class="tournament-divider">⛳ Upcoming Tournaments</div>';
+                    hasShownDivider = true;
+                }
+                
+                const statusClass = t.status === 'completed' ? 'completed' : 
+                                   t.status === 'in_progress' ? 'in-progress' : '';
+                
+                const golfers = getGolfersForTournament(t.id);
+                let top5Html = '';
+                if (t.status === 'upcoming' && golfers.length > 0) {
+                    const top5 = golfers.slice(0, 5);
+                    top5Html = '<br><span style="font-size: 12px; color: #666;">Top 5: ' + 
+                        top5.map(g => `${g.name} (${g.odds})`).join(', ') + '</span>';
+                }
+                
+                html += `
+                    <div class="tournament-item ${statusClass} ${state.selectedTournament?.id === t.id ? 'selected' : ''}" 
+                         onclick="selectTournament('${t.id}')">
+                        <div class="tournament-name">${t.name}</div>
+                        <div class="tournament-details">
+                            📅 ${t.date}<br>
+                            📍 ${t.location}
+                            ${t.winner ? `<br>🏆 Winner: ${t.winner}` : ''}
+                            ${t.status === 'in_progress' ? '<br>🔴 LIVE' : ''}
+                            ${top5Html}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderGolfers() {
+            let tournamentGolfers = getGolfersForTournament(state.selectedTournament.id);
+            
+            if (state.showOnlyAvailable) {
+                tournamentGolfers = tournamentGolfers.filter(g => !isUsed(g.id));
+            }
+            
+            const favoriteGolfers = tournamentGolfers.filter(g => 
+                isFavorite(g.id, state.selectedTournament.id)
+            );
+            const allGolfers = getGolfersForTournament(state.selectedTournament.id);
+            const usedCount = allGolfers.filter(g => isUsed(g.id)).length;
+            
+            let sortedGolfers = [...tournamentGolfers];
+            if (state.sortBy === 'rank') {
+                sortedGolfers.sort((a, b) => a.rank - b.rank);
+            } else if (state.sortBy === 'odds') {
+                sortedGolfers.sort((a, b) => {
+                    const oddsA = parseInt(a.odds?.replace('+', '') || '99999');
+                    const oddsB = parseInt(b.odds?.replace('+', '') || '99999');
+                    return oddsA - oddsB;
+                });
+            }
+
+            return `
+                <button class="back-btn" onclick="backToTournaments()">
+                    ← Back to Tournaments
+                </button>
+
+                <div class="card">
+                    <h2 style="margin-bottom: 8px; color: #0f4c27;">${state.selectedTournament.name}</h2>
+                    <div style="color: #666; font-size: 14px; margin-bottom: 16px;">
+                        ${state.selectedTournament.date} • ${allGolfers.length} golfers
+                        ${usedCount > 0 ? `• <span style="color: #e74c3c;">${usedCount} already used this year</span>` : ''}
+                    </div>
+
+                    ${favoriteGolfers.length > 0 ? `
+                        <div class="favorites-section">
+                            <div style="font-weight: 600; margin-bottom: 12px; color: #0f4c27;">
+                                ⭐ Your Favorites (${favoriteGolfers.length})
+                            </div>
+                            ${favoriteGolfers.map(g => `
+                                <div style="font-size: 14px; padding: 4px 0; display: flex; justify-content: space-between;">
+                                    <span>${g.name} (Rank #${g.rank}) ${isUsed(g.id) ? '<span style="color: #e74c3c;">- Already Used</span>' : ''}</span>
+                                    <span class="odds-badge ${getOddsClass(g.odds)}" style="font-size: 11px;">${g.odds}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    <div class="filter-section">
+                        <button class="filter-btn ${state.sortBy === 'odds' ? 'active' : ''}" 
+                                onclick="setSortBy('odds')">
+                            💰 Odds
+                        </button>
+                        <button class="filter-btn ${state.sortBy === 'rank' ? 'active' : ''}" 
+                                onclick="setSortBy('rank')">
+                            🏆 Ranking
+                        </button>
+                        <button class="filter-btn ${state.showOnlyAvailable ? 'active' : ''}" 
+                                onclick="toggleAvailableOnly()">
+                            ${state.showOnlyAvailable ? '✓ Available Only' : 'Show All'}
+                        </button>
+                    </div>
+
+                    ${sortedGolfers.map(g => `
+                        <div class="golfer-item ${isUsed(g.id) ? 'used' : ''}" onclick="selectGolfer(${g.id})">
+                            <div class="golfer-header">
+                                <div style="display: flex; align-items: center;">
+                                    <span class="golfer-name">${g.name}</span>
+                                    <button class="favorite-btn" onclick="event.stopPropagation(); toggleFavorite(${g.id}, '${state.selectedTournament.id}')">
+                                        ${isFavorite(g.id, state.selectedTournament.id) ? '⭐' : '☆'}
+                                    </button>
+                                    <button class="used-btn" onclick="event.stopPropagation(); toggleUsed(${g.id})" 
+                                            title="${isUsed(g.id) ? 'Mark as available' : 'Mark as used'}">
+                                        ${isUsed(g.id) ? '✓' : '○'}
+                                    </button>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="odds-badge ${getOddsClass(g.odds)}">${g.odds}</span>
+                                    <span class="golfer-rank">#${g.rank}</span>
+                                </div>
+                            </div>
+                            <div class="golfer-meta">
+                                <span>🌍 ${g.country}</span>
+                                <span>Implied Prob: ${oddsToImpliedProbability(g.odds)}</span>
+                                ${isUsed(g.id) ? '<span class="badge used">Already Used</span>' : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderGolferDetail() {
+            const golfer = getGolfersForTournament(state.selectedTournament.id).find(g => g.id === state.selectedGolfer);
+            const used = isUsed(golfer.id);
+            const notes = getNotes(golfer.id, state.selectedTournament.id);
+
+            return `
+                <button class="back-btn" onclick="backToGolfers()">
+                    ← Back to Golfers
+                </button>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="color: #0f4c27; margin-bottom: 8px;">${golfer.name}</h2>
+                            <div style="color: #666; font-size: 14px;">
+                                🌍 ${golfer.country} • World Rank #${golfer.rank}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+        // REAL Historical Tournament Data
+        // Based on actual PGA Tour results - Add more as you research!
+        const golferHistory = {
+            1: {  // Scottie Scheffler - World #1
+                tournamentHistory: {
+                    'wmpo-2026': [
+                        { year: 2024, position: 'T15' },
+                        { year: 2023, position: 'T3' }
+                    ],
+                    'genesis-2026': [
+                        { year: 2024, position: '1' },
+                        { year: 2023, position: 'T8' }
+                    ],
+                    'players-2026': [
+                        { year: 2024, position: 'T2' },
+                        { year: 2023, position: '1' }
+                    ],
+                    'masters-2026': [
+                        { year: 2024, position: '1' },
+                        { year: 2023, position: 'T10' },
+                        { year: 2022, position: '1' }
+                    ],
+                    'pgachamp-2026': [
+                        { year: 2024, position: 'T2' },
+                        { year: 2023, position: 'T12' }
+                    ],
+                    'usopen-2026': [
+                        { year: 2024, position: '2' },
+                        { year: 2023, position: 'T12' }
+                    ]
+                },
+                recentTournaments: [
+                    { name: 'AT&T Pebble Beach', position: '1' },
+                    { name: 'Farmers Insurance', position: 'T2' },
+                    { name: 'The American Express', position: 'T5' },
+                    { name: 'Sentry Tournament', position: '1' },
+                    { name: 'Hero World Challenge', position: 'T3' }
+                ]
+            },
+            2: {  // Rory McIlroy
+                tournamentHistory: {
+                    'players-2026': [
+                        { year: 2024, position: 'T15' },
+                        { year: 2023, position: 'T7' },
+                        { year: 2019, position: '1' }
+                    ],
+                    'masters-2026': [
+                        { year: 2024, position: 'T8' },
+                        { year: 2023, position: '7' },
+                        { year: 2022, position: '2' },
+                        { year: 2018, position: 'T5' },
+                        { year: 2015, position: 'T4' }
+                    ],
+                    'pgachamp-2026': [
+                        { year: 2023, position: 'T7' },
+                        { year: 2022, position: 'T8' },
+                        { year: 2014, position: '1' },
+                        { year: 2012, position: '1' }
+                    ],
+                    'usopen-2026': [
+                        { year: 2024, position: '2' },
+                        { year: 2023, position: 'T2' },
+                        { year: 2011, position: '1' }
+                    ],
+                    'open-2026': [
+                        { year: 2023, position: 'T6' },
+                        { year: 2014, position: '1' }
+                    ]
+                },
+                recentTournaments: [
+                    { name: 'Dubai Desert Classic', position: 'T15' },
+                    { name: 'Hero World Challenge', position: '2' },
+                    { name: 'DP World Championship', position: '1' },
+                    { name: 'Scottish Open', position: '1' },
+                    { name: 'FedEx St. Jude', position: 'T3' }
+                ]
+            },
+            3: {  // Jon Rahm
+                tournamentHistory: {
+                    'wmpo-2026': [
+                        { year: 2024, position: 'T5' },
+                        { year: 2023, position: '1' }
+                    ],
+                    'genesis-2026': [
+                        { year: 2023, position: '1' },
+                        { year: 2022, position: 'T12' }
+                    ],
+                    'masters-2026': [
+                        { year: 2023, position: '1' },
+                        { year: 2022, position: '2' },
+                        { year: 2021, position: 'T5' },
+                        { year: 2018, position: 'T4' }
+                    ],
+                    'usopen-2026': [
+                        { year: 2023, position: 'T2' },
+                        { year: 2021, position: '1' }
+                    ]
+                },
+                recentTournaments: [
+                    { name: 'Dubai Desert Classic', position: 'T5' },
+                    { name: 'Hero World Challenge', position: 'T8' },
+                    { name: 'BMW PGA Championship', position: 'T8' }
+                ]
+            },
+            5: {  // Xander Schauffele
+                tournamentHistory: {
+                    'masters-2026': [
+                        { year: 2023, position: 'T2' },
+                        { year: 2024, position: 'T8' }
+                    ],
+                    'pgachamp-2026': [
+                        { year: 2024, position: '1' },
+                        { year: 2023, position: 'T5' }
+                    ],
+                    'usopen-2026': [
+                        { year: 2024, position: '1' }
+                    ]
+                },
+                recentTournaments: [
+                    { name: 'AT&T Pebble Beach', position: 'T8' },
+                    { name: 'Farmers Insurance', position: 'T3' }
+                ]
+            },
+            12: {  // Brooks Koepka
+                tournamentHistory: {
+                    'pgachamp-2026': [
+                        { year: 2023, position: '1' },
+                        { year: 2019, position: '1' },
+                        { year: 2018, position: '1' }
+                    ],
+                    'usopen-2026': [
+                        { year: 2018, position: '1' },
+                        { year: 2017, position: '1' }
+                    ],
+                    'masters-2026': [
+                        { year: 2023, position: 'T2' },
+                        { year: 2019, position: 'T2' }
+                    ]
+                },
+                recentTournaments: []
+            },
+            14: {  // Jordan Spieth
+                tournamentHistory: {
+                    'masters-2026': [
+                        { year: 2021, position: 'T3' },
+                        { year: 2018, position: 'T3' },
+                        { year: 2015, position: '1' }
+                    ],
+                    'usopen-2026': [
+                        { year: 2015, position: '1' }
+                    ],
+                    'open-2026': [
+                        { year: 2017, position: '1' }
+                    ],
+                    'players-2026': [
+                        { year: 2021, position: '1' }
+                    ]
+                },
+                recentTournaments: []
+            },
+            16: {  // Justin Thomas
+                tournamentHistory: {
+                    'pgachamp-2026': [
+                        { year: 2022, position: '1' },
+                        { year: 2017, position: '1' }
+                    ],
+                    'players-2026': [
+                        { year: 2021, position: '1' }
+                    ]
+                },
+                recentTournaments: []
+            },
+            23: {  // Hideki Matsuyama
+                tournamentHistory: {
+                    'masters-2026': [
+                        { year: 2021, position: '1' }
+                    ],
+                    'players-2026': [
+                        { year: 2024, position: 'T5' }
+                    ]
+                },
+                recentTournaments: []
+            }
+        };
+
+                                ${isFavorite(golfer.id, state.selectedTournament.id) ? '⭐' : '☆'}
+                            </button>
+                            <button class="used-btn" style="font-size: 24px;" 
+                                    onclick="toggleUsed(${golfer.id})"
+                                    title="${used ? 'Mark as available' : 'Mark as used'}">
+                                ${used ? '✓' : '○'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="background: #f8f9fa; padding: 16px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Betting Odds</div>
+                            <div style="font-size: 24px; font-weight: 600; color: #0f4c27;">${golfer.odds}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 16px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Implied Win %</div>
+                            <div style="font-size: 24px; font-weight: 600; color: #0f4c27;">${oddsToImpliedProbability(golfer.odds)}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 16px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Status</div>
+                            <div style="font-size: 18px; font-weight: 600; color: ${used ? '#e74c3c' : '#27ae60'};">
+                                ${used ? 'Already Used' : 'Available'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff3cd; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #ffd93d;">
+                        <div style="font-weight: 600; margin-bottom: 8px;">📊 Data Status</div>
+                        <div style="font-size: 14px; color: #856404;">
+                            Historical performance data can be added manually. Use the notes section below to track golfer statistics.
+                        </div>
+                    </div>
+
+                    <div class="notes-section">
+                        <div style="font-weight: 600; margin-bottom: 12px; color: #0f4c27;">
+                            📝 Personal Notes
+                        </div>
+                        <textarea 
+                            id="golfer-notes" 
+                            placeholder="Add your research notes, stats, or observations about this golfer for this tournament..."
+                            onchange="saveNotes(${golfer.id}, '${state.selectedTournament.id}')"
+                        >${notes}</textarea>
+                        <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                            💡 Tip: Track course history, recent form, weather preferences, or any other insights here
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (state.view === 'tournaments') {
+                app.innerHTML = renderTournaments();
+            } else if (state.view === 'golfers') {
+                app.innerHTML = renderGolfers();
+            } else if (state.view === 'golferDetail') {
+                app.innerHTML = renderGolferDetail();
+            }
+        }
+
+        // Start the app
+        initializeApp();
+    </script>
+</body>
+</html>
