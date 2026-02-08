@@ -398,46 +398,114 @@
     </div>
 
     <script>
-        // Mock data - will be replaced with API calls later
-        const tournaments = [
-            {
-                id: 1,
-                name: "The Genesis Invitational",
-                date: "February 13-16, 2026",
-                location: "Riviera Country Club, Pacific Palisades, CA",
-                field: 120
-            },
-            {
-                id: 2,
-                name: "The Players Championship",
-                date: "March 12-15, 2026",
-                location: "TPC Sawgrass, Ponte Vedra Beach, FL",
-                field: 144
-            },
-            {
-                id: 3,
-                name: "Masters Tournament",
-                date: "April 9-12, 2026",
-                location: "Augusta National Golf Club, Augusta, GA",
-                field: 96
-            },
-            {
-                id: 4,
-                name: "PGA Championship",
-                date: "May 14-17, 2026",
-                location: "Quail Hollow Club, Charlotte, NC",
-                field: 156
-            },
-            {
-                id: 5,
-                name: "U.S. Open",
-                date: "June 18-21, 2026",
-                location: "Oakmont Country Club, Oakmont, PA",
-                field: 156
-            }
-        ];
+        // API Configuration
+        const API_BASE = 'https://site.web.api.espn.com/apis/site/v2/sports/golf/pga';
+        
+        // Data cache
+        let tournaments = [];
+        let apiDataCache = {
+            lastFetch: null,
+            tournaments: [],
+            golfers: {}
+        };
 
-        const golfers = {
+        // Check if we need to refresh data (48 hours)
+        function needsRefresh() {
+            if (!apiDataCache.lastFetch) return true;
+            const hoursSinceLastFetch = (Date.now() - apiDataCache.lastFetch) / (1000 * 60 * 60);
+            return hoursSinceLastFetch > 48;
+        }
+
+        // Format date for display
+        function formatTournamentDate(dateString) {
+            const date = new Date(dateString);
+            const options = { month: 'long', day: 'numeric', year: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // Fetch tournaments from ESPN API
+        async function fetchTournaments() {
+            try {
+                const response = await fetch(`${API_BASE}/scoreboard`);
+                const data = await response.json();
+                
+                // Parse tournament data
+                const tournamentData = [];
+                if (data.events && data.events.length > 0) {
+                    data.events.forEach((event, index) => {
+                        tournamentData.push({
+                            id: event.id,
+                            name: event.name,
+                            date: formatTournamentDate(event.date),
+                            location: event.competitions?.[0]?.venue?.fullName || 'TBA',
+                            status: event.status?.type?.name || 'scheduled',
+                            field: event.competitions?.[0]?.competitors?.length || 0
+                        });
+                    });
+                }
+                
+                return tournamentData;
+            } catch (error) {
+                console.error('Error fetching tournaments:', error);
+                return getFallbackTournaments();
+            }
+        }
+
+        // Fallback to mock data if API fails
+        function getFallbackTournaments() {
+            return [
+                {
+                    id: '1',
+                    name: "The Genesis Invitational",
+                    date: "February 13-16, 2026",
+                    location: "Riviera Country Club, Pacific Palisades, CA",
+                    field: 120
+                },
+                {
+                    id: '2',
+                    name: "The Players Championship",
+                    date: "March 12-15, 2026",
+                    location: "TPC Sawgrass, Ponte Vedra Beach, FL",
+                    field: 144
+                },
+                {
+                    id: '3',
+                    name: "Masters Tournament",
+                    date: "April 9-12, 2026",
+                    location: "Augusta National Golf Club, Augusta, GA",
+                    field: 96
+                }
+            ];
+        }
+
+        // Initialize app with API data
+        async function initializeApp() {
+            // Show loading state
+            const app = document.getElementById('app');
+            app.innerHTML = '<div class="card"><div style="text-align: center; padding: 40px;">Loading tournaments...</div></div>';
+            
+            // Try to load from cache first
+            const cached = localStorage.getItem('apiDataCache');
+            if (cached) {
+                apiDataCache = JSON.parse(cached);
+            }
+            
+            // Fetch fresh data if needed
+            if (needsRefresh()) {
+                tournaments = await fetchTournaments();
+                apiDataCache.tournaments = tournaments;
+                apiDataCache.lastFetch = Date.now();
+                localStorage.setItem('apiDataCache', JSON.stringify(apiDataCache));
+            } else {
+                tournaments = apiDataCache.tournaments;
+            }
+            
+            // Render the app
+            render();
+        }
+
+        // Mock golfer data - will be enhanced with API data
+        const golfersData = {
             1: [ // Genesis Invitational
                 { id: 1, name: "Scottie Scheffler", country: "USA", rank: 1, recentForm: 1.8, courseAvg: 8.2, specialist: true, odds: "+450" },
                 { id: 2, name: "Rory McIlroy", country: "NIR", rank: 2, recentForm: 12.4, courseAvg: 15.3, specialist: false, odds: "+1200" },
@@ -463,6 +531,13 @@
                 { id: 2, name: "Rory McIlroy", country: "NIR", rank: 2, recentForm: 12.4, courseAvg: 8.7, specialist: false, odds: "+800" }
             ]
         };
+
+        // Function to get golfers for a tournament (will use API later)
+        function getGolfersForTournament(tournamentId) {
+            // For now, return mock data
+            // Later we'll fetch from API
+            return golfersData[tournamentId] || golfersData[1];
+        }
 
         const golferHistory = {
             1: { // Scottie Scheffler
@@ -650,7 +725,7 @@
         }
 
         function renderGolfers() {
-            const tournamentGolfers = golfers[state.selectedTournament.id] || [];
+            const tournamentGolfers = getGolfersForTournament(state.selectedTournament.id);
             const favoriteGolfers = tournamentGolfers.filter(g => 
                 isFavorite(g.id, state.selectedTournament.id)
             );
@@ -750,7 +825,7 @@
         }
 
         function renderGolferDetail() {
-            const golfer = golfers[state.selectedTournament.id].find(g => g.id === state.selectedGolfer);
+            const golfer = getGolfersForTournament(state.selectedTournament.id).find(g => g.id === state.selectedGolfer);
             const history = golferHistory[state.selectedGolfer];
             const tournamentHistory = history?.tournamentHistory[state.selectedTournament.id] || [];
             const recentResults = history?.recentTournaments || [];
@@ -899,8 +974,8 @@
             saveNotes();
         }
 
-        // Initial render
-        render();
+        // Initialize app when page loads
+        initializeApp();
     </script>
 </body>
 </html>
